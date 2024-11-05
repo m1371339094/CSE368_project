@@ -6,23 +6,51 @@ LEFT = 0
 UP = 1
 RIGHT = 2
 DOWN = 3
-actions=[LEFT,UP,RIGHT,DOWN]
+List_actions=[LEFT,UP,RIGHT,DOWN]
+#MIDWAY-> recursive with depth (runtime) and return list of actions 
+#After-> UI, Algo that can't see every possible outcome
+
 class gym__2048:
     def __init__(self, env, depth):
         self.env=env
         self.depth=depth
-    def evaluate(self,board,depth):
-       for action in actions:
+        self.moves=0
+    
+    def evaluate(self,board,action,depth=0,rewards=0):
+      if depth==self.depth:
+        return board,action,rewards
+      return self.getaction(board,action,depth,rewards)
+    
+    def getaction(self,board,action,depth,rewards):
+      # print('here')
+      best_action=None
+      best_reward=0
+      
+      # print('here1')
+
+      for action in List_actions:
+          # self.moves+=1
+
           next_state,reward,done,info=self.move_board(board,action)  
+          # print('here')
+          if done:
+            # print('done')
+            return next_state,action,rewards+reward
           print('Next Action: "{}"\n\nReward: {}'.format(
             gym_2048.Base2048Env.ACTION_STRING[action], reward))        
           self.render(next_state)
+          board,action,rewards=self.evaluate(next_state,action,depth+1,rewards+reward)
+          if reward>=best_reward:
+            best_reward=reward
+            best_action=action
+      
+      return board,best_action,best_reward
 
-    def nextaction(self):
-        None
+
   
     #from Base2048Env
     def move_board(self,board,action):
+      print('here')
       rotated_obs = np.rot90(board, k=action)
       reward, updated_obs = self.env._slide_left_and_merge(rotated_obs)
       board2 = np.rot90(updated_obs, k=4 - action)
@@ -56,10 +84,13 @@ if __name__ == '__main__':
   
   done = False
   moves = 0
-  curenv=gym__2048(env,5)
+  curenv=gym__2048(env,2)
   while not done and moves!=1:
     # action = 1
-    curenv.evaluate(env.board,5)
+    board,best_action,best_reward=(curenv.evaluate(env.board,None))
+    # print(best_action)
+    # print(curenv.moves)
+    
     # print('act',board,reward)
     moves += 1
     
