@@ -23,6 +23,7 @@ class gym__2048:
       if depth==self.depth:
         return board,actions,rewards
       return self.getaction(board,actions,depth,rewards)
+    #1->4->20...
     
     def getaction(self,board,actions,depth,rewards):
       # print('here')
@@ -78,30 +79,31 @@ class gym__2048:
         for row in board.tolist():
           print(' \t'.join(map(str, row)))
       print()
+      
 #(1/num_of_blocks)(8+8+4+4+2+4+.5+.5)
 class better_2048(gym__2048):
     def __init__(self, env, depth):
       super().__init__(env, depth)
-    def board_after_action(self,board,depth):
-      if depth==self.depth:
-        return board
-      points=0
-      new_board=board
-      for act in List_actions:
-        board2=self.move_board_without_random(board,act) 
-        new_points=self.arrow_algo(board2) 
-        # print(new_points,points)
+    # def board_after_action(self,board,depth):
+    #   if depth==self.depth:
+    #     return board
+    #   points=0
+    #   new_board=board
+    #   for act in List_actions:
+    #     board2=self.move_board_without_random(board,act) 
+    #     new_points=self.arrow_algo(board2) 
+    #     # print(new_points,points)
         
-        if new_points>points:
-          new_board=board2
-          points=new_points
-      self.env._place_random_tiles(new_board, count=1)
-      done=self.is_done(board)
-      # self.render(new_board)
-      if done:
-        return new_board
-      # print(new_board)
-      return self.board_after_action(new_board,depth+1)
+    #     if new_points>points:
+    #       new_board=board2
+    #       points=new_points
+    #   self.env._place_random_tiles(new_board, count=1)
+    #   done=self.is_done(board)
+    #   # self.render(new_board)
+    #   if done:
+    #     return new_board
+    #   # print(new_board)
+    #   return self.board_after_action(new_board,depth+1)
     def board_after_action_iterate(self,board,depth):
       last_board=board
       new_board=board
@@ -161,7 +163,7 @@ class better_2048(gym__2048):
       if big_pos in Corners:
         tot+=2
       tot+=biggest
-      tot+=10/num_of_block
+      tot+=100/num_of_block
       return tot
     def arrow_algo(self,board):
         largest_tile, largest_pos,tot_num_of_block = self.find_largest_tile(board)
@@ -176,7 +178,6 @@ class better_2048(gym__2048):
                     if tile_value > 0:
                         proximity_factor = 1 - (layer / 4)
                         score += (tile_value) * proximity_factor
-
         return score
 
 
@@ -192,8 +193,7 @@ class better_2048(gym__2048):
                     largest_tile = board[i][j]
                     largest_pos = (i, j)
         return largest_tile, largest_pos, tot_num_of_block
-
-
+        
     def manhattan_distance(s,pos1, pos2):
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
     
@@ -208,6 +208,12 @@ class better_2048(gym__2048):
 
 if __name__ == '__main__':
   env = gym.make('2048-v0')
+  # env.seed(18)
+  # env.reset()
+  # done = False
+  # curenv = better_2048(env, 10000)
+  # usealgo = curenv.board_after_action_iterate(env.board, 0)
+  # print(usealgo)
   def find_biggest_tile_across_seeds(env, seed_range, iterations):
     largest_tiles = []
 
@@ -218,13 +224,13 @@ if __name__ == '__main__':
         curenv = better_2048(env, iterations)
         usealgo = curenv.board_after_action_iterate(env.board, 0)
         largest_tile = max(max(row) for row in usealgo)
-        largest_tiles.append(largest_tile)
+        largest_tiles.append((largest_tile,seed))
         print(largest_tile,seed)
     
     return max(largest_tiles)
 
   # Loop seeds and iterations
-  seed_range = 100 
+  seed_range = 100
   iterations = 10000 
   largest_number = find_biggest_tile_across_seeds(env, seed_range, iterations)
 
