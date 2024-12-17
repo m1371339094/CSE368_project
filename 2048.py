@@ -23,7 +23,7 @@ class gym__2048:
       if depth==self.depth:
         return board,actions,rewards
       return self.getaction(board,actions,depth,rewards)
-    #1->4->20...
+    #1->5->
     
     def getaction(self,board,actions,depth,rewards):
       # print('here')
@@ -74,7 +74,9 @@ class gym__2048:
           return False
       return True
     #from Base2048Env
-    def render(self, board, mode='human'):
+    def render(self, board, other='', mode='human'):
+      if other:
+        print(other)
       if mode == 'human':
         for row in board.tolist():
           print(' \t'.join(map(str, row)))
@@ -108,20 +110,27 @@ class better_2048(gym__2048):
       last_board=board
       new_board=board
       points=0
+      tot_reward=0
+      reward_now=0
+      self.render(new_board, 'Begining:')
       while depth !=self.depth:
         for act in List_actions:
-          board2=self.move_board_without_random(last_board,act) 
-          new_points=self.arrow_algo(board2) 
+          board2,reward=self.move_board_without_random(last_board,act) 
+          new_points=self.layer(board2) 
           if np.array_equal(last_board,board2):
             continue
           if new_points>points:
             new_board=board2
             points=new_points
+            reward_now=reward
         self.env._place_random_tiles(new_board, count=1)
         done=self.is_done(new_board)
+        tot_reward+=reward_now
         # self.render(new_board)
         if done:
-          return new_board
+          self.render(new_board, 'Ending:')
+          print(tot_reward,'score')
+          return new_board,tot_reward
         points=0  
         depth+=1
         last_board=new_board
@@ -134,7 +143,7 @@ class better_2048(gym__2048):
             if 0 <= nx < 4 and 0 <= ny < 4:
                 neighbors.append(board[ny][nx]) 
         return neighbors
-    def old_arrow_algo(self,board):
+    def arrow_algo(self,board):
       tot=0
       num_of_block=0
       biggest=0
@@ -148,12 +157,9 @@ class better_2048(gym__2048):
           biggest=x if x> biggest else biggest
           neighbors=self.get_neighbors(board,dx,dy)
           new_wall=([x]*(4-len(neighbors)))
-          if biggest==x:
-            # print(big_neighbor)
-            big_pos=(dx,dy)
+          if biggest==x: big_pos=(dx,dy)
           walls=walls+(new_wall)
-          # print(walls)
-          # print(len(neighbors),([x]*(4-len(neighbors))))
+
           for neighbor in neighbors:
             #/0
             if  neighbor>x:
@@ -165,7 +171,7 @@ class better_2048(gym__2048):
       tot+=biggest
       tot+=100/num_of_block
       return tot
-    def arrow_algo(self,board):
+    def layer(self,board):
         largest_tile, largest_pos,tot_num_of_block = self.find_largest_tile(board)
         score = 0
         score += largest_tile 
@@ -204,15 +210,17 @@ class better_2048(gym__2048):
       board2 = np.rot90(updated_obs, k=4 - action)
       # self.env._place_random_tiles(board2, count=1)
       # done=self.is_done(board)
-      return board2
+      return board2,reward
 
 if __name__ == '__main__':
   env = gym.make('2048-v0')
   # env.seed(18)
   # env.reset()
   # done = False
-  # curenv = better_2048(env, 10000)
-  # usealgo = curenv.board_after_action_iterate(env.board, 0)
+  #1,4
+  curenv = better_2048(env, 100)
+  # usealgo = curenv.board_after_action_iterate(env.board, 10)
+  # final=curenv.evaluate(env.board)
   # print(usealgo)
   def find_biggest_tile_across_seeds(env, seed_range, iterations):
     largest_tiles = []
@@ -222,15 +230,14 @@ if __name__ == '__main__':
         env.reset()
         done = False
         curenv = better_2048(env, iterations)
-        usealgo = curenv.board_after_action_iterate(env.board, 0)
+        usealgo,tot_reward = curenv.board_after_action_iterate(env.board, 0)
         largest_tile = max(max(row) for row in usealgo)
-        largest_tiles.append((largest_tile,seed))
-        print(largest_tile,seed)
+        largest_tiles.append((tot_reward,largest_tile,seed))
+        print('seed: ',seed, 'largest tile: ', largest_tile)
     
     return max(largest_tiles)
 
-  # Loop seeds and iterations
-  seed_range = 100
+  seed_range = 10
   iterations = 10000 
   largest_number = find_biggest_tile_across_seeds(env, seed_range, iterations)
 
